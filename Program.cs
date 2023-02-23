@@ -4,26 +4,224 @@
 using System.Diagnostics;
 using System.Text;
 using CliWrap;
+using Cocona;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
+using System.Text.Json.Serialization;
 
-// Console.WriteLine();
 
-var smsg = new Dictionary<string,string> {
-    {"hl" , "哈喽~~~~🤗🤗🤗🤗🤗🤗"}
+var SC_RUNNING = false;
+
+await Cli.Wrap("adb")
+   .WithArguments("shell ime disable com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService")
+   .ExecuteAsync();
+
+await Cli.Wrap("adb")
+   .WithArguments("shell ime disable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+   .ExecuteAsync();
+
+await Cli.Wrap("adb")
+   .WithArguments("shell ime set com.android.adbkeyboard/.AdbIME")
+   .ExecuteAsync();
+
+await Glo.OpenInputStatus();
+
+await Glo.SendMessage(string.Empty);
+
+
+var smsg = new Dictionary<string, string> {
+    {"hl" , "哈喽~~~~🤗🤗🤗🤗🤗🤗"},
+    {"test1",@"
+
+|￣￣￣￣￣￣￣ |  
+|            AFK              |
+|＿＿＿＿＿ _＿_|
+(\__/) || 
+(•ㅅ•) || 
+/ 　 づ
+
+".Trim()},
+    {"test2",@"
+
+▲
+▲ ▲
+..(\ /)
+..(•.•)  
+c("")(“) 
+
+".Trim()},
+    {"test3",@"
+
+(\(\
+( – -)  AFK
+((‘) (’)
+
+".Trim()},
+    {"test4",@"
+
+(=‘.’=)
+(“)_(”)
+
+".Trim()},
+    {"test6",@"
+
+.-..-. /),/) .-..-.
+""-.-"" ( ';' ) ""-.-""
+.-..-. c(..c) .-..-.
+""-.-"" 00 ""-.-""
+
+".Trim()},
+    {"test7",@"
+
+(”)….(”)
+( ‘ o ‘ )
+(”)–(”)
+(””’)-(””’)
+
+".Trim()},
+    {"test8",@"
+
+(\_/)
+( •,•)
+("")_("")
+
+".Trim()},
+    {"test9",@"
+
+( )  ( )
+( o . o)
+
+".Trim()},
+    {"test10",@"
+
+".Trim()},
+    {"test11",@"
+
+o( ("") ("")
+
+".Trim()},
+    {"test12",@"
+
+^. .^
+(@).(@)
+{ /l l\ }
+¥""""¥
+
+".Trim()},
+    {"test13",@"
+
+. (＼_／)
+٩(◍•౪•◍)۶✧˖°
+
+".Trim()},
+    {"test14",@"
+
+".Trim()},
+    {"test15",@"
+
+_██_
+‹(•¿•)›
+..(█)
+.../ I
+
+".Trim()},
+    {"test16",@"
+
+(•3•)
+Z(  )z
+/  \
+
+".Trim()},
+    {"test17",@"
+
+|(•)
+- )
+|(•)
+
+".Trim()},
+    {"test18",@"
+
+(n_n)_)_)_)_)_)_)_)_)
+
+".Trim()},
+    {"test19",@"
+
+Sniper Rifle ▄︻̷̿┻̿═━一
+
+".Trim()},
+    {"test20",@"
+
+".Trim()},
+    {"test21",@"
+
+Music♩♪♫♬ Volume: ▁ ▃ ▄ ▆ █ 100 %
+
+██▓▒░.___.░▒▓█► Check Back for Updates
+
+".Trim()},
+    {"test24",@"
+
+´*•.¸(*•.¸♥¸.•*´)¸.•*´
+♥«´¨`•°..诺瑜..°•´¨`»♥
+.¸.•*(¸.•*´♥`*•.¸)`*•.
+
+".Trim()},
+    {"test22",@"
+
+╔═.♥.══════╗
+NAME
+╚══════.♥.═╝
+
+".Trim()},
+    {"test23",@"
+
+(.   \
+\  |   
+\ |___(\--/)
+__/    (  . . )
+""'._.    '-.O.'
+'-.  \ ""|\
+ '.,,/'.,,mrf
+
+".Trim()}};
+
+var rep = new Dictionary<string, string>
+{
+
 };
+
 
 string MSG = null;
 Task? player = default;
 var playerCancellationTokenSource = new CancellationTokenSource();
 
 
-Console.CancelKeyPress += delegate
+Console.CancelKeyPress += async delegate
 {
-    playerCancellationTokenSource.Cancel();
+    if (SC_RUNNING)
+    {
+        return;
+    }
 
-    while (!(player?.IsCompleted ?? true))
-    { }
+    Cli.Wrap("adb")
+        .WithArguments("shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+        .ExecuteAsync()
+        .Task
+        .Wait();
+
+    Cli.Wrap("adb")
+        .WithArguments("shell ime enable com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService")
+        .ExecuteAsync()
+        .Task
+        .Wait();
+
+    Cli.Wrap("adb")
+        .WithArguments("shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+        .ExecuteAsync()
+        .Task
+        .Wait();
+
+    await new Player().Stop();
 };
 
 Console.OutputEncoding = Encoding.Unicode;
@@ -78,30 +276,30 @@ while (true)
 
     var msg = Console.ReadLine();
 
-    if (msg.StartsWith("playlist"))
+    if (msg is null)
     {
-        foreach (var item in Directory.GetFiles("./COTLTracker/tracks", "*.txt"))
-        {
-            Console.WriteLine(new FileInfo(item).Name[..^4]);
-        }
-        Console.WriteLine("..............................");
         continue;
     }
 
-    // if (msg.StartsWith("play "))
-    // {
-    //     Play(msg.Split(" ").Last());
-    //     Console.WriteLine("..............................");
-    //     continue;
-    // }
+    if (msg.StartsWith("sc "))
+    {
+        var myArgs = msg.Split(" ")[1..];
+        SC_RUNNING = true;
+        await CoconaApp.RunAsync<SystemCall>(myArgs);
+        SC_RUNNING = false;
+        continue;
+    }
 
-    if(smsg.TryGetValue(msg,out var tm)){
+    if (smsg.TryGetValue(msg, out var tm))
+    {
         Console.WriteLine(tm);
         msg = tm;
     }
 
     if (string.IsNullOrWhiteSpace(msg))
     {
+        await Glo.OpenInputStatus();
+
         var readFromMic = ReadFromMic();
         Console.Write("Speak into your microphone.");
 
@@ -141,7 +339,7 @@ while (true)
 
 
 
-    var task = Task.Run(() => SendMessage(msg));
+    var task = Task.Run(() => Glo.SendMessage(msg));
 
     var i = 0;
 
@@ -159,46 +357,3 @@ while (true)
 
     Console.WriteLine();
 }
-
-// void Play(string name)
-// {
-//     File.WriteAllText("player.bat",@$"
-//         cd COTLTracker
-//         go run main.go -track ./tracks/{name}.txt
-//     ",);
-
-//     Process.Start(new ProcessStartInfo("player.bat")
-//     {
-//         CreateNoWindow = true,
-//         UseShellExecute = false
-//     });
-
-
-//     // player = Cli.Wrap("go")
-//     //    .WithArguments("run main.go -track " + name)
-//     //    .WithWorkingDirectory("./COTLTracker/")
-//     //    .WithStandardOutputPipe(PipeTarget.Create((stream =>
-//     //    {
-
-//     //    })))
-//     //    .ExecuteAsync(playerCancellationTokenSource.Token);
-
-
-// }
-
-void SendMessage(string msg)
-{
-    File.WriteAllLines("run.bat", new string[] {
-$"adb shell am broadcast -a ADB_CLEAR_TEXT",
-$"adb shell am broadcast -a ADB_INPUT_B64 --es msg '{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(msg))}'",
-$"adb shell am broadcast -a ADB_EDITOR_CODE --ei code 4"
-});
-
-    Process.Start(new ProcessStartInfo("run.bat")
-    {
-        CreateNoWindow = true,
-        UseShellExecute = false
-    });
-}
-
-
